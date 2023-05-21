@@ -1,0 +1,49 @@
+version: '3.9'
+
+services:
+    zapproxy:
+        image: owasp/zap2docker-stable:latest
+        tty: true
+        environment:
+            - APP_PORT
+        networks:
+            - labnet
+        ports:
+            - published: 8086
+              target: 8080
+              mode: host
+            - published: 8090
+              target: 8090
+              mode: host
+        command: zap-webswing.sh
+    browser:
+        image: jlesage/firefox:latest
+        environment:
+            - API_PUBLIC_PORT
+        depends_on:
+            - zapproxy
+        networks:
+            - labnet
+        ports:
+            - published: 8085
+              target: 5800
+              mode: host
+    juiceshop:
+        image: bkimminich/juice-shop:latest
+        deploy:
+            resources:
+                limits:
+                    memory: 4G
+                reservations:
+                    memory: 2G
+        networks:
+            - labnet
+        ports:
+            - "3000:8087"
+
+networks:
+    labnet:
+        driver: overlay
+        ipam:
+            config:
+                - subnet: 192.168.18.0/24
